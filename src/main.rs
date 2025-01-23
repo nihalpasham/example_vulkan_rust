@@ -1,4 +1,4 @@
-use ash::{vk, Entry};
+use ash::{ext::debug_utils, vk, Entry};
 use std::ffi::{c_char, CStr};
 
 unsafe extern "system" fn vulkan_debug_utils_callback(
@@ -10,7 +10,12 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
     let message = CStr::from_ptr((*p_callback_data).p_message);
     let severity = format!("{:?}", message_severity).to_lowercase();
     let ty = format!("{:?}", message_type).to_lowercase();
-    println!("[Debug][{}][{}] {:?}", severity, ty, message);
+    println!(
+        "[DBG]: [{}][{}] {}",
+        severity,
+        ty,
+        message.to_str().unwrap()
+    );
     vk::FALSE
 }
 
@@ -40,7 +45,7 @@ fn main() {
     let layer_names = [c"VK_LAYER_KHRONOS_validation"];
     let layer_name_ptrs = [layer_names[0].as_ptr() as *const c_char];
     let mut extension_names = Vec::new();
-    // extension_names.push(debug_utils::NAME.as_ptr());
+    extension_names.push(debug_utils::NAME.as_ptr());
     extension_names.push(ash::khr::portability_enumeration::NAME.as_ptr());
     // Enabling this extension is a requirement when using `VK_KHR_portability_subset`
     extension_names.push(ash::khr::get_physical_device_properties2::NAME.as_ptr());
@@ -57,13 +62,31 @@ fn main() {
     let entry;
     let instance;
     unsafe {
-        entry = Entry::load().expect("Failed to create Entry");
-        println!("entry: {:?}", entry.try_enumerate_instance_version());
+        entry = Entry::load().expect("Failed to load Vulkan entry");
+        let instance_version;
+        match {
+            entry
+                .try_enumerate_instance_version()
+                .expect("Failed to enumerate instance version")
+        } {
+            // Vulkan 1.1+
+            Some(version) => {
+                let major = vk::api_version_major(version);
+                let minor = vk::api_version_minor(version);
+                let patch = vk::api_version_patch(version);
+                instance_version = format!("{}.{}.{}", major, minor, patch);
+            }
+            // Vulkan 1.0
+            None => {
+                instance_version = format!("1.0");
+            }
+        }
+        println!("Vulkan version: {}", instance_version);
         instance = match entry.create_instance(&instance_create_info, None) {
             Ok(instance) => instance,
             Err(err) => panic!("Failed to create instance: {}, {:?}", err, err),
         }
     }
     println!("instance: {:?}", instance.handle());
+    
 }
-
