@@ -133,7 +133,7 @@ fn main() {
             .queue_priorities(&priorities);
 
         let mut extension_names = Vec::new();
-        extension_names.push( ash::khr::portability_subset::NAME.as_ptr());
+        extension_names.push(ash::khr::portability_subset::NAME.as_ptr());
 
         let device_create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(std::slice::from_ref(&queue_info))
