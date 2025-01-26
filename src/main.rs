@@ -198,7 +198,7 @@ fn main() {
     }
 
     // Record a copy command to copy data into a command buffer.
-    let data = [0x40; 1024];
+    // let data = [0x5u8; 1024];
     let begin_info = vk::CommandBufferBeginInfo::default();
     unsafe {
         device
@@ -209,7 +209,7 @@ fn main() {
             buffer,
             allocation.offset(),
             allocation.size(),
-            data.len() as u32,
+            0x40414243 as u32,
         );
         device.end_command_buffer(command_buffers[0]).unwrap();
     }
